@@ -2,11 +2,26 @@ package blockchain
 
 import (
 	"flag"
+	"fmt"
 	"os"
+	"strconv"
 )
 
 type CLI struct {
 	bc *BlockChain
+}
+
+func (cli *CLI) printUsage() {
+	fmt.Println("Usage:")
+	fmt.Println("  addblock -data BLOCK_DATA - add a block to the blockchain")
+	fmt.Println("  printchain - print all the blocks of the blockchain")
+}
+
+func (cli *CLI) validateArgs() {
+	if len(os.Args) < 2 {
+		cli.printUsage()
+		os.Exit(1)
+	}
 }
 
 func (cli *CLI) Run() {
@@ -52,5 +67,24 @@ func (cli *CLI) Run() {
 }
 
 func (cli *CLI) addBlock(data string) {
-	cli.bc
+	cli.bc.AddBlock(data)
+	fmt.Println("Success!")
+}
+
+func (cli *CLI) printChain(){
+	bci := cli.bc.Iterator()
+
+	for{
+		block := bci.Next()
+		fmt.Printf("Previous hash: %x\n", block.PrevHash)
+		fmt.Printf("Data: %x\n", block.Data)
+		fmt.Printf("Hash: %x\n", block.Hash)
+		pow := NewProofOfWork(block)
+		fmt.Printf("Proof of work: %s\n", strconv.FormatBool(pow.Validate()))
+		fmt.Println()
+
+		if len(block.PrevHash) == 0 {
+			break
+		}
+	}
 }
