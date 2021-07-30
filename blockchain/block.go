@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
-	"strconv"
 	"time"
 )
 
@@ -12,20 +11,32 @@ import (
 type Block struct {
 	Timestamp int64
 	Hash []byte
-	Data []byte
+	Transaction []*Transaction
 	PrevHash []byte
 	Nonce int
 }
 
-func (b *Block) DeriveHash() {
-	timestamp := []byte(strconv.FormatInt(b.Timestamp, 10))
-	headers := bytes.Join([][]byte{timestamp, b.Data, b.PrevHash}, []byte{})
-	hash := sha256.Sum256(headers)
-	b.Hash = hash[:]
+//func (b *Block) DeriveHash() {
+//	timestamp := []byte(strconv.FormatInt(b.Timestamp, 10))
+//	headers := bytes.Join([][]byte{timestamp, b.Transaction, b.PrevHash}, []byte{})
+//	hash := sha256.Sum256(headers)
+//	b.Hash = hash[:]
+//}
+
+func (b *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range b.Transaction{
+		txHashes = append(txHashes, tx.Id)
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
 }
 
-func CreateBlock(data string, prevHash []byte) *Block {
-	block := &Block{time.Now().Unix(), []byte{}, []byte(data), prevHash, 0}
+func CreateBlock(transactions []*Transaction, prevHash []byte) *Block {
+	block := &Block{time.Now().Unix(), []byte{}, transactions, prevHash, 0}
 	pow := NewProofOfWork(block)
 	nonce, hash := pow.Run()
 
@@ -37,8 +48,8 @@ func CreateBlock(data string, prevHash []byte) *Block {
 
 
 
-func Genesis() *Block {
-	return CreateBlock("Genesis", []byte{})
+func Genesis(coinbase *Transaction) *Block {
+	return CreateBlock([]*Transaction{coinbase}, []byte{})
 }
 
 
